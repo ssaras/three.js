@@ -234,7 +234,6 @@
 				 * Curves
 				 *********/
 
-				debugger;
 				for ( var i = 0; i < splinePointsLength; i ++ ) {
 
 					addSplineObject( positions[ i ] );
@@ -249,18 +248,9 @@
 
 				}
 
-				// positions = [
-					// new THREE.Vector3(0, 0, 0),
-					// new THREE.Vector3(0, 1000, 0),
-					// new THREE.Vector3(0, 1000, -500),
-					// new THREE.Vector3(0, 0, -500)
-				// ];
-
 				var geometry = new THREE.BufferGeometry();
+				var curve = new THREE.CatmullRomCurve3( positions, true, "catmullrom", 0 );
 				geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( ARC_SEGMENTS * 3 ), 3 ) );
-				var curve = new THREE.CatmullRomCurve3( positions, true, "catmullrom", 0 );//, true, "catmullrom", 0
-				// curve.curveType = 'catmullrom';
-				// curve.close = true;
 				curve.mesh = new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
 					color: 0xff0000,
 					opacity: 0.35,
@@ -271,11 +261,11 @@
 
 				curve = new THREE.CatmullRomCurve3( positions );
 				curve.curveType = 'centripetal';
-				curve.mesh = new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
+				curve.mesh = new THREE.Line(geometry.clone(), new THREE.LineBasicMaterial({
 					color: 0x00ff00,
 					opacity: 0.35,
 					linewidth: 2
-					} ) );
+				}));
 				curve.mesh.castShadow = true;
 				splines.centripetal = curve;
 
