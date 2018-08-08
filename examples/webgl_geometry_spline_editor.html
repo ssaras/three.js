@@ -37,6 +37,9 @@
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
 
+		<script src="article_012345.js"></script>
+		<script src="article_123456.js"></script>
+
 		<script>
 
 			String.prototype.format = function () {
@@ -132,17 +135,17 @@
 
 				var gui = new dat.GUI();
 
-				gui.add( params, 'uniform' );
+				// gui.add( params, 'uniform' );
 				gui.add( params, 'tension', 0, 1 ).step( 0.01 ).onChange( function( value ) {
 					splines.uniform.tension = value;
 					updateSplineOutline();
 				});
-				gui.add( params, 'centripetal' );
-				gui.add( params, 'chordal' );
-				gui.add( params, 'addPoint' );
-				gui.add( params, 'removePoint' );
-				gui.add( params, 'exportSpline' );
-				gui.open();
+				// gui.add( params, 'centripetal' );
+				// gui.add( params, 'chordal' );
+				// gui.add( params, 'addPoint' );
+				// gui.add( params, 'removePoint' );
+				// gui.add( params, 'exportSpline' );
+				// gui.open();
 
 				// Controls
 				var controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -248,14 +251,67 @@
 
 				}
 
+				debugger;
+
+				var stepVal = 4;
+				var steps = stepVal;
+				var curveSegments = stepVal;
+				var tension = 0;
+				var shapes = article_012345();
+				var extrudeMesh = new THREE.Group();;
+				for (var i = 0, len = shapes.length; i < len; i++) {
+					var shape = shapes[i];
+
+					var geometry = new THREE.ExtrudeGeometry(shape, {
+						steps: steps,
+						curveSegments: curveSegments,
+						bevelEnabled: false,
+						// extrudePath: extrudePath,
+						tension: tension
+					});					
+					var materialFront = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
+					var materialSide = new THREE.MeshLambertMaterial({ color: 0x555555 });
+					var materialArray = [materialFront, materialSide];
+					var shapeMesh = new THREE.Mesh(geometry, materialArray);
+					extrudeMesh.add(shapeMesh);
+				}
+
+				extrudeMesh.geometry = {
+					attributes:{
+						position: new THREE.BufferAttribute( new Float32Array( ARC_SEGMENTS * 3 ), 3 )
+					}
+				};
+
+				// var shapes = article_123456();
+				// for (var i = 0, len = shapes.length; i < len; i++) {
+				// 	var shape = shapes[i];
+
+				// 	var geometry = new THREE.ExtrudeGeometry(shape, {
+				// 		steps: steps,
+				// 		curveSegments: curveSegments,
+				// 		bevelEnabled: false,
+				// 		extrudePath: extrudePath,
+				// 		tension: tension
+				// 	});
+				// 	var materialFront = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
+				// 	var materialSide = new THREE.MeshLambertMaterial({ color: 0x555555 });
+				// 	var materialArray = [materialFront, materialSide];
+				// 	var shapeMesh = new THREE.Mesh(geometry, materialArray);
+				// 	mesh.add(shapeMesh);
+				// }
+
+				debugger;
+				
 				var geometry = new THREE.BufferGeometry();
 				var curve = new THREE.CatmullRomCurve3( positions, true, "catmullrom", 0 );
 				geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( ARC_SEGMENTS * 3 ), 3 ) );
-				curve.mesh = new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
-					color: 0xff0000,
-					opacity: 0.35,
-					linewidth: 2
-					} ) );
+				curve.mesh = extrudeMesh;
+				
+				// new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
+				// 	color: 0xff0000,
+				// 	opacity: 0.35,
+				// 	linewidth: 2
+				// }));
 				curve.mesh.castShadow = true;
 				splines.uniform = curve;
 
@@ -275,9 +331,11 @@
 					color: 0x0000ff,
 					opacity: 0.35,
 					linewidth: 2
-					} ) );
+				}));
 				curve.mesh.castShadow = true;
 				splines.chordal = curve;
+
+				debugger;
 
 				for ( var k in splines ) {
 
