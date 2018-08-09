@@ -1,0 +1,155 @@
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+<style>
+    body {
+        overflow: hidden;
+        margin: 0;
+    }
+</style>
+
+<body></body>
+
+<script>
+    function ProfiledContourGeometry(profileShape, contour) {
+
+        let profileGeometry = new THREE.ShapeBufferGeometry(profileShape);
+        profileGeometry.rotateX(Math.PI * .5);
+        let profile = profileGeometry.attributes.position;
+
+        let profilePoints = new Float32Array(profile.count * contour.length * 3);
+
+        for (let i = 0; i < contour.length; i++) {
+            let v1 = new THREE.Vector2().subVectors(contour[i - 1 < 0 ? contour.length - 1 : i - 1], contour[i]);
+            let v2 = new THREE.Vector2().subVectors(contour[i + 1 == contour.length ? 0 : i + 1], contour[i]);
+            let angle = v2.angle() - v1.angle();
+            let halfAngle = angle * .5;
+
+            let shift = Math.tan(halfAngle - Math.PI * .5);
+            console.log(shift);
+            let shiftMatrix = new THREE.Matrix4().set(
+                1, 0, 0, 0, -shift, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            );
+
+            let tempAngle = v2.angle() + Math.PI * .5;
+            let rotationMatrix = new THREE.Matrix4().set(
+                Math.cos(tempAngle), -Math.sin(tempAngle), 0, 0,
+                Math.sin(tempAngle), Math.cos(tempAngle), 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            );
+
+            let translationMatrix = new THREE.Matrix4().set(
+                1, 0, 0, contour[i].x,
+                0, 1, 0, contour[i].y,
+                0, 0, 1, 0,
+                0, 0, 0, 1,
+            );
+
+            let cloneProfile = profile.clone();
+            shiftMatrix.applyToBufferAttribute(cloneProfile);
+            rotationMatrix.applyToBufferAttribute(cloneProfile);
+            translationMatrix.applyToBufferAttribute(cloneProfile);
+
+            profilePoints.set(cloneProfile.array, cloneProfile.count * i * 3);
+        }
+
+        let fullProfileGeometry = new THREE.BufferGeometry();
+        fullProfileGeometry.addAttribute("position", new THREE.BufferAttribute(profilePoints, 3));
+        let index = [];
+
+        for (let i = 0; i < contour.length; i++) {
+            for (let j = 0; j < profile.count; j++) {
+                let currCorner = i;
+                let nextCorner = i + 1 == contour.length ? 0 : i + 1;
+                let currPoint = j;
+                let nextPoint = j + 1 == profile.count ? 0 : j + 1;
+
+                let a = nextPoint + profile.count * currCorner;
+                let b = currPoint + profile.count * currCorner;
+                let c = currPoint + profile.count * nextCorner;
+                let d = nextPoint + profile.count * nextCorner;
+
+
+                index.push(a, b, d);
+                index.push(b, c, d);
+            }
+        }
+
+        console.log(index);
+        fullProfileGeometry.setIndex(index);
+        fullProfileGeometry.computeVertexNormals();
+
+        return fullProfileGeometry;
+    }
+
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+    camera.position.set(5, 5, 10);
+    var renderer = new THREE.WebGLRenderer({
+        antialias: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    var light = new THREE.DirectionalLight(0xffffff, .75);
+    light.position.setScalar(10);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0xffffff, .25));
+
+    var helper = new THREE.GridHelper(20, 20);
+    //helper.geometry.rotateX(Math.PI * -.5);
+    scene.add(helper);
+
+    var profileShape1 = new THREE.Shape();
+    profileShape1.moveTo(0, 0);
+    profileShape1.lineTo(0, 1);
+    profileShape1.absarc(1, 1, .5, Math.PI, Math.PI * 1.5);
+    profileShape1.lineTo(1, 0);
+
+    var contour1 = [
+        new THREE.Vector2(0, 0),
+        new THREE.Vector2(1, 1),
+        new THREE.Vector2(2, 1),
+        new THREE.Vector2(2, 0),
+        new THREE.Vector2(1, -1)
+    ];
+
+    var geometry1 = ProfiledContourGeometry(profileShape1, contour1);
+    geometry1.rotateX(-Math.PI * .5);
+    var fullProfile1 = new THREE.Mesh(geometry1, new THREE.MeshLambertMaterial({
+        color: "red",
+        wireframe: false
+    }));
+    scene.add(fullProfile1);
+
+    var profileShape2 = new THREE.Shape();
+    profileShape2.absarc(0, 0, 1, 0, Math.PI * 2);
+
+    var contour2 = [
+        new THREE.Vector2(0, 0),
+        new THREE.Vector2(0, 5),
+        new THREE.Vector2(5, 5),
+        new THREE.Vector2(5, 0)
+    ]
+
+    var geometry2 = ProfiledContourGeometry(profileShape2, contour2);
+    var fullProfile2 = new THREE.Mesh(geometry2, new THREE.MeshBasicMaterial({
+        color: "aqua",
+        wireframe: true
+    }));
+    fullProfile2.position.set(-7, 1, -5);
+    scene.add(fullProfile2);
+
+    render();
+
+    function render() {
+        requestAnimationFrame(render);
+        renderer.render(scene, camera);
+    }
+</script>
